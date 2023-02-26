@@ -492,39 +492,46 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
             }
             LexItem::Opt(LeaseKeyword::Hardware) => {
                 iter.next();
-                let h_type = iter.peek().expect("Hardware type expected").to_string();
+                let h_type = match iter.peek() {
+                    Some(v) => v.to_string(),
+                    None => return Err("Hardware type expected".to_owned()),
+                };
                 iter.next();
-                let mac = iter.peek().expect("MAC address expected").to_string();
+                let mac = match iter.peek() {
+                    Some(v) => v.to_string(),
+                    None => return Err("MAC address expected".to_owned()),
+                };
                 iter.next();
-                match iter.peek().expect("Semicolon expected") {
-                    LexItem::Endl => (),
-                    s => return Err(format!("Expected semicolon, found {}", s.to_string())),
+                if iter.peek() != Some(&&LexItem::Endl) {
+                    return Err("Semicolon expected authoring-byte-order".to_owned());
                 }
 
                 lease.hardware.replace(Hardware { h_type, mac });
             }
             LexItem::Opt(LeaseKeyword::Uid) => {
                 iter.next();
-                lease
-                    .uid
-                    .replace(iter.peek().expect("Client identifier expected").to_string());
+                let v = match iter.peek() {
+                    Some(v) => v.to_string(),
+                    None => return Err("Client identifier expected".to_owned()),
+                };
+                lease.uid.replace(v);
 
                 iter.next();
-                match iter.peek().expect("Semicolon expected") {
-                    LexItem::Endl => (),
-                    s => return Err(format!("Expected semicolon, found {}", s.to_string())),
+                if iter.peek() != Some(&&LexItem::Endl) {
+                    return Err("Semicolon expected authoring-byte-order".to_owned());
                 }
             }
             LexItem::Opt(LeaseKeyword::ClientHostname) => {
                 iter.next();
-                lease.client_hostname.replace(unquote(
-                    iter.peek().expect("Client hostname expected").to_string(),
-                ));
+                let v = match iter.peek() {
+                    Some(v) => v.to_string(),
+                    None => return Err("Client hostname expected".to_owned()),
+                };
+                lease.client_hostname.replace(unquote(v));
 
                 iter.next();
-                match iter.peek().expect("Semicolon expected") {
-                    LexItem::Endl => (),
-                    s => return Err(format!("Expected semicolon, found {}", s.to_string())),
+                if iter.peek() != Some(&&LexItem::Endl) {
+                    return Err("Semicolon expected authoring-byte-order".to_owned());
                 }
             }
             LexItem::Opt(LeaseKeyword::Binding) => lease.binding_state = parse_binding_state(iter)?,
@@ -546,14 +553,15 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
             }
             LexItem::Opt(LeaseKeyword::Hostname) => {
                 iter.next();
-                lease
-                    .hostname
-                    .replace(unquote(iter.peek().expect("Hostname expected").to_string()));
+                let v = match iter.peek() {
+                    Some(v) => v.to_string(),
+                    None => return Err("Hostname expected".to_owned()),
+                };
+                lease.hostname.replace(unquote(v));
 
                 iter.next();
-                match iter.peek().expect("Semicolon expected") {
-                    LexItem::Endl => (),
-                    s => return Err(format!("Expected semicolon, found {}", s.to_string())),
+                if iter.peek() != Some(&&LexItem::Endl) {
+                    return Err("Semicolon expected authoring-byte-order".to_owned());
                 }
             }
             LexItem::Opt(LeaseKeyword::Set) => {

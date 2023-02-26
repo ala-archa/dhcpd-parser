@@ -46,7 +46,10 @@ fn parse_config(tokens: Vec<LexItem>) -> Result<ParserResult, String> {
                 let mut lease = Lease::new();
                 // ip-address
                 it.next();
-                lease.ip = it.peek().expect("IP address expected").to_string();
+                lease.ip = match it.peek() {
+                    Some(v) => v.to_string(),
+                    None => return Err(format!("IP address expected")),
+                };
 
                 // left curly brace
                 it.next();
@@ -74,6 +77,10 @@ fn parse_config(tokens: Vec<LexItem>) -> Result<ParserResult, String> {
                         return Err("Value for authoring-byte-order".to_owned());
                     }
                     it.next();
+                    if it.peek() != Some(&&LexItem::Endl) {
+                        return Err("Semicolon expected authoring-byte-order".to_owned());
+                    }
+                    it.next();
                 }
                 _ => {
                     return Err(format!("Unexpected {:?}", it.peek()));
@@ -85,7 +92,7 @@ fn parse_config(tokens: Vec<LexItem>) -> Result<ParserResult, String> {
         }
     }
 
-    Ok(ParserResult { leases: leases })
+    Ok(ParserResult { leases })
 }
 
 pub fn parse<S>(input: S) -> Result<ParserResult, String>

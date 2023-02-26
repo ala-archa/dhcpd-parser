@@ -252,6 +252,12 @@ fn client_hostnames_with_comments_test() {
 fn real_world_test() {
     let res = parser::parse(
         r#"
+# The format of this file is documented in the dhcpd.leases(5) manual page.
+# This lease file was written by isc-dhcp-4.4.1
+
+# authoring-byte-order entry is generated, DO NOT DELETE
+authoring-byte-order little-endian;
+
 lease 10.11.4.50 {
   starts 3 2023/02/22 21:15:36;
   ends 4 2023/02/23 09:15:36;

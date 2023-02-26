@@ -229,3 +229,29 @@ fn client_hostnames_test() {
             .collect()
     );
 }
+
+#[test]
+fn client_hostnames_with_comments_test() {
+    let res = parser::parse(
+        "
+    # comment
+    lease 192.168.0.2 { # comment
+        starts 2 2019/01/01 22:00:00 UTC;
+        #comment
+        ends 2 2019/01/01 23:00:00 UTC;
+        hardware type 11:11:11:11:11:11;
+        uid Client1;
+        client-hostname \"CLIENTHOSTNAME\";
+        hostname \"TESTHOSTNAME\"; # comment
+        abandoned;
+    }
+    # comment",
+    );
+
+    let leases = res.unwrap().leases;
+
+    assert_eq!(
+        leases.client_hostnames(),
+        ["CLIENTHOSTNAME".to_owned()].iter().cloned().collect()
+    );
+}

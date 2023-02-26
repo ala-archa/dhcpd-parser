@@ -40,6 +40,14 @@ where
                 result.push(LexItem::Paren(c));
                 it.next();
             }
+            '#' => {
+                while let Some(&c) = it.peek() {
+                    if c == '\n' {
+                        break;
+                    }
+                    it.next();
+                }
+            }
             ' ' | '\n' | '\t' => {
                 it.next();
             }

@@ -73,14 +73,14 @@ fn parse_config(tokens: Vec<LexItem>) -> Result<ParserResult, String> {
                 it.next();
             }
             LexItem::Word(w) => match w.as_str() {
-                "authoring-byte-order" => {
+                "authoring-byte-order" | "server-duid" => {
                     it.next();
                     if it.peek().is_none() {
-                        return Err("Value for authoring-byte-order".to_owned());
+                        return Err("Value".to_owned());
                     }
                     it.next();
                     if it.peek() != Some(&&LexItem::Endl) {
-                        return Err("Semicolon expected authoring-byte-order".to_owned());
+                        return Err("Semicolon expected".to_owned());
                     }
                     it.next();
                 }

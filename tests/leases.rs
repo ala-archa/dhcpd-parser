@@ -288,6 +288,9 @@ lease 10.11.4.56 {
   uid "\001>4Y\337.\252";
   set vendor-class-identifier = "android-dhcp-13";
 }
+
+server-duid "\000\001\000\001+\216\026\3260\336K\003\251\211";
+
 lease 10.11.4.52 {
   starts 0 2023/02/26 07:52:20;
   ends 0 2023/02/26 19:52:20;

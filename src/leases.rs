@@ -503,7 +503,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                 };
                 iter.next();
                 if iter.peek() != Some(&&LexItem::Endl) {
-                    return Err("Semicolon expected authoring-byte-order".to_owned());
+                    return Err("Semicolon expected after MAC".to_owned());
                 }
 
                 lease.hardware.replace(Hardware { h_type, mac });
@@ -518,7 +518,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
 
                 iter.next();
                 if iter.peek() != Some(&&LexItem::Endl) {
-                    return Err("Semicolon expected authoring-byte-order".to_owned());
+                    return Err("Semicolon expected after client identifier".to_owned());
                 }
             }
             LexItem::Opt(LeaseKeyword::ClientHostname) => {
@@ -531,7 +531,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
 
                 iter.next();
                 if iter.peek() != Some(&&LexItem::Endl) {
-                    return Err("Semicolon expected authoring-byte-order".to_owned());
+                    return Err("Semicolon expected after client hostname".to_owned());
                 }
             }
             LexItem::Opt(LeaseKeyword::Binding) => lease.binding_state = parse_binding_state(iter)?,
@@ -561,7 +561,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
 
                 iter.next();
                 if iter.peek() != Some(&&LexItem::Endl) {
-                    return Err("Semicolon expected authoring-byte-order".to_owned());
+                    return Err("Semicolon expected after hostname".to_owned());
                 }
             }
             LexItem::Opt(LeaseKeyword::Set) => {

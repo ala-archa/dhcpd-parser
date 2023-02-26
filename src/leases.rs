@@ -12,6 +12,12 @@ pub enum BindingState {
     Abandoned,
 }
 
+impl Default for BindingState {
+    fn default() -> Self {
+        Self::Free
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LeaseKeyword {
     ClientHostname,
@@ -31,27 +37,30 @@ pub enum LeaseKeyword {
     Set,
 }
 
-impl LeaseKeyword {
-    pub fn to_string(&self) -> String {
-        match self {
-            LeaseKeyword::ClientHostname => "client-hostname".to_owned(),
-            LeaseKeyword::Ends => "ends".to_owned(),
-            LeaseKeyword::Hardware => "hardware".to_owned(),
-            LeaseKeyword::Hostname => "hostname".to_owned(),
-            LeaseKeyword::Starts => "starts".to_owned(),
-            LeaseKeyword::Uid => "uid".to_owned(),
-            LeaseKeyword::Tstp => "tstp".to_owned(),
-            LeaseKeyword::Tsfp => "tsfp".to_owned(),
-            LeaseKeyword::Atsfp => "atsfp".to_owned(),
-            LeaseKeyword::Cltt => "cltt".to_owned(),
-            LeaseKeyword::Binding => "binding".to_owned(),
-            LeaseKeyword::State => "state".to_owned(),
-            LeaseKeyword::Next => "next".to_owned(),
-            LeaseKeyword::Rewind => "rewind".to_owned(),
-            LeaseKeyword::Set => "set".to_owned(),
-        }
+impl std::fmt::Display for LeaseKeyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let r = match self {
+            LeaseKeyword::ClientHostname => "client-hostname",
+            LeaseKeyword::Ends => "ends",
+            LeaseKeyword::Hardware => "hardware",
+            LeaseKeyword::Hostname => "hostname",
+            LeaseKeyword::Starts => "starts",
+            LeaseKeyword::Uid => "uid",
+            LeaseKeyword::Tstp => "tstp",
+            LeaseKeyword::Tsfp => "tsfp",
+            LeaseKeyword::Atsfp => "atsfp",
+            LeaseKeyword::Cltt => "cltt",
+            LeaseKeyword::Binding => "binding",
+            LeaseKeyword::State => "state",
+            LeaseKeyword::Next => "next",
+            LeaseKeyword::Rewind => "rewind",
+            LeaseKeyword::Set => "set",
+        };
+        write!(f, "{}", r)
     }
+}
 
+impl LeaseKeyword {
     pub fn from(s: &str) -> Result<LeaseKeyword, String> {
         match s {
             "client-hostname" => Ok(LeaseKeyword::ClientHostname),
@@ -74,7 +83,7 @@ impl LeaseKeyword {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct LeaseDates {
     pub starts: Option<Date>,
     pub ends: Option<Date>,
@@ -107,10 +116,7 @@ impl LeasesField {
             LeasesField::Hostname => Box::new(|l: &Lease| -> Option<String> { l.hostname.clone() }),
             LeasesField::LeasedIP => Box::new(|l: &Lease| -> Option<String> { Some(l.ip.clone()) }),
             LeasesField::MAC => Box::new(|l: &Lease| -> Option<String> {
-                match &l.hardware {
-                    Some(h) => Some(h.mac.clone()),
-                    None => None,
-                }
+                l.hardware.as_ref().map(|h| h.mac.clone())
             }),
         }
     }
@@ -208,13 +214,7 @@ impl LeasesMethods for Leases {
         let mut ls = self.0.clone();
         ls.reverse();
 
-        for l in ls {
-            if l.ip == ip.as_ref() {
-                return Some(l);
-            }
-        }
-
-        None
+        ls.into_iter().find(|l| l.ip == ip.as_ref())
     }
 
     fn by_leased_all<S: AsRef<str>>(&self, ip: S) -> Vec<Lease> {
@@ -227,7 +227,7 @@ impl LeasesMethods for Leases {
             }
         }
 
-        return result;
+        result
     }
 
     fn by_mac<S: AsRef<str>>(&self, mac: S) -> Option<Lease> {
@@ -255,7 +255,7 @@ impl LeasesMethods for Leases {
             }
         }
 
-        return result;
+        result
     }
 
     fn active_by_hostname<S: AsRef<str>>(&self, hostname: S, active_at: Date) -> Option<Lease> {
@@ -320,7 +320,7 @@ impl LeasesMethods for Leases {
             }
         }
 
-        return res;
+        res
     }
 
     fn client_hostnames(&self) -> HashSet<String> {
@@ -333,11 +333,11 @@ impl LeasesMethods for Leases {
             }
         }
 
-        return res;
+        res
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Lease {
     pub ip: String,
     pub dates: LeaseDates,
@@ -352,28 +352,6 @@ pub struct Lease {
 }
 
 impl Lease {
-    pub fn new() -> Lease {
-        Lease {
-            ip: "localhost".to_owned(),
-            dates: LeaseDates {
-                starts: None,
-                ends: None,
-                tstp: None,
-                tsfp: None,
-                atsfp: None,
-                cltt: None,
-            },
-            hardware: None,
-            uid: None,
-            client_hostname: None,
-            hostname: None,
-            binding_state: BindingState::Free,
-            next_binding_state: None,
-            rewind_binding_state: None,
-            vendor_class_identifier: None,
-        }
-    }
-
     pub fn is_active_at(&self, when: Date) -> bool {
         if self.dates.starts.is_some() && self.dates.starts.unwrap() > when {
             return false;
@@ -383,7 +361,7 @@ impl Lease {
             return false;
         }
 
-        return true;
+        true
     }
 }
 
@@ -540,7 +518,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                 if iter.peek() == Some(&&LexItem::Opt(LeaseKeyword::Binding)) {
                     lease.next_binding_state = Some(parse_binding_state(iter)?)
                 } else {
-                    return Err(format!("Expected 'binding' after 'next'"));
+                    return Err("Expected 'binding' after 'next'".to_string());
                 }
             }
             LexItem::Opt(LeaseKeyword::Rewind) => {
@@ -548,7 +526,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                 if iter.peek() == Some(&&LexItem::Opt(LeaseKeyword::Binding)) {
                     lease.rewind_binding_state = Some(parse_binding_state(iter)?)
                 } else {
-                    return Err(format!("Expected 'binding' after 'rewind'"));
+                    return Err("Expected 'binding' after 'rewind'".to_string());
                 }
             }
             LexItem::Opt(LeaseKeyword::Hostname) => {
@@ -569,19 +547,19 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                 let name = if let Some(LexItem::Word(w)) = iter.peek() {
                     w
                 } else {
-                    return Err(format!("Value name expected after 'set'"));
+                    return Err("Value name expected after 'set'".to_string());
                 };
 
                 iter.next();
                 if Some(&&LexItem::Word("=".to_string())) != iter.peek() {
-                    return Err(format!("'=' expected after 'set VALUE'"));
+                    return Err("'=' expected after 'set VALUE'".to_string());
                 }
 
                 iter.next();
                 let value = if let Some(LexItem::Word(w)) = iter.peek() {
                     w
                 } else {
-                    return Err(format!("Value name expected after '='"));
+                    return Err("Value name expected after '='".to_string());
                 };
 
                 iter.next();
@@ -589,22 +567,15 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                     return Err(format!("Expected semisolon, found {:?}", iter.peek()));
                 }
 
-                match name.as_str() {
-                    "vendor-class-identifier" => {
-                        let _ = lease.vendor_class_identifier.replace(unquote(value));
-                    }
-                    // Skip unknown values
-                    _ => (),
+                if let "vendor-class-identifier" = name.as_str() {
+                    let _ = lease.vendor_class_identifier.replace(unquote(value));
                 }
             }
             LexItem::Paren('}') => {
                 return Ok(());
             }
             _ => {
-                return Err(format!(
-                    "Unexpected option '{}'",
-                    iter.peek().unwrap().to_string()
-                ));
+                return Err(format!("Unexpected option '{}'", iter.peek().unwrap()));
             }
         }
         iter.next();
@@ -614,8 +585,8 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
 }
 
 fn unquote(hn: &str) -> String {
-    hn.trim_start_matches("\"")
-        .trim_end_matches("\"")
+    hn.trim_start_matches('"')
+        .trim_end_matches('"')
         .replace("\\\"", "\"")
         .replace("\\\\", "\\")
 }

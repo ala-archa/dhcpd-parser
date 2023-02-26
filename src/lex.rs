@@ -18,8 +18,8 @@ impl fmt::Display for LexItem {
         match self {
             LexItem::Paren(v) => v.fmt(f),
             LexItem::Word(v) => v.fmt(f),
-            LexItem::Opt(v) => write!(f, "{}", v.to_string()),
-            LexItem::Decl(v) => write!(f, "{}", v.to_string()),
+            LexItem::Opt(v) => write!(f, "{}", v),
+            LexItem::Decl(v) => write!(f, "{}", v),
             LexItem::Endl => write!(f, ";"),
         }
     }
@@ -58,12 +58,12 @@ where
             _ => {
                 let w = get_word(&mut it);
                 let kw = ConfigKeyword::from(&w);
-                if kw.is_ok() {
-                    result.push(LexItem::Decl(kw.unwrap()));
+                if let Ok(kw) = kw {
+                    result.push(LexItem::Decl(kw));
                 } else {
                     let kw = LeaseKeyword::from(&w);
-                    if kw.is_ok() {
-                        result.push(LexItem::Opt(kw.unwrap()));
+                    if let Ok(kw) = kw {
+                        result.push(LexItem::Opt(kw));
                     } else {
                         result.push(LexItem::Word(w));
                     }

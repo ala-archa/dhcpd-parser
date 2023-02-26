@@ -126,27 +126,18 @@ fn is_active_test() {
 
     assert!(leases[0].is_active_at(Date::from("2", "2019/01/01", "22:30:00").unwrap()));
 
-    assert_eq!(
-        leases[1].is_active_at(Date::from("1", "1985/01/01", "22:30:00").unwrap()),
-        false
-    );
+    assert!(!leases[1].is_active_at(Date::from("1", "1985/01/01", "22:30:00").unwrap()),);
 
-    assert_eq!(
-        leases[0].is_active_at(Date::from("2", "2019/01/01", "21:59:00").unwrap()),
-        false
-    );
+    assert!(!leases[0].is_active_at(Date::from("2", "2019/01/01", "21:59:00").unwrap()),);
 
-    assert_eq!(
-        leases[0].is_active_at(
-            Date::from(
-                "2".to_string(),
-                "2019/01/01".to_string(),
-                "23:59:00".to_string()
-            )
-            .unwrap()
-        ),
-        false
-    );
+    assert!(!leases[0].is_active_at(
+        Date::from(
+            "2".to_string(),
+            "2019/01/01".to_string(),
+            "23:59:00".to_string()
+        )
+        .unwrap()
+    ),);
 }
 
 #[test]

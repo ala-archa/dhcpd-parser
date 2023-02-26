@@ -67,6 +67,18 @@ fn parse_config(tokens: Vec<LexItem>) -> Result<ParserResult, String> {
                 leases.push(lease.clone());
                 it.next();
             }
+            LexItem::Word(w) => match w.as_str() {
+                "authoring-byte-order" => {
+                    it.next();
+                    if it.peek().is_none() {
+                        return Err("Value for authoring-byte-order".to_owned());
+                    }
+                    it.next();
+                }
+                _ => {
+                    return Err(format!("Unexpected {:?}", it.peek()));
+                }
+            },
             _ => {
                 return Err(format!("Unexpected {:?}", it.peek()));
             }

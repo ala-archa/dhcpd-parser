@@ -6,38 +6,69 @@ use crate::common::Date;
 use crate::lex::LexItem;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum LeaseKeyword {
+pub enum BindingState {
+    Active,
+    Free,
     Abandoned,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LeaseKeyword {
     ClientHostname,
     Ends,
     Hardware,
     Hostname,
     Starts,
     Uid,
+    Tstp,
+    Tsfp,
+    Atsfp,
+    Cltt,
+    Binding,
+    State,
+    Next,
+    Rewind,
+    Set,
 }
 
 impl LeaseKeyword {
     pub fn to_string(&self) -> String {
         match self {
-            &LeaseKeyword::Abandoned => "abandoned".to_owned(),
-            &LeaseKeyword::ClientHostname => "client-hostname".to_owned(),
-            &LeaseKeyword::Ends => "ends".to_owned(),
-            &LeaseKeyword::Hardware => "hardware".to_owned(),
-            &LeaseKeyword::Hostname => "hostname".to_owned(),
-            &LeaseKeyword::Starts => "starts".to_owned(),
-            &LeaseKeyword::Uid => "uid".to_owned(),
+            LeaseKeyword::ClientHostname => "client-hostname".to_owned(),
+            LeaseKeyword::Ends => "ends".to_owned(),
+            LeaseKeyword::Hardware => "hardware".to_owned(),
+            LeaseKeyword::Hostname => "hostname".to_owned(),
+            LeaseKeyword::Starts => "starts".to_owned(),
+            LeaseKeyword::Uid => "uid".to_owned(),
+            LeaseKeyword::Tstp => "tstp".to_owned(),
+            LeaseKeyword::Tsfp => "tsfp".to_owned(),
+            LeaseKeyword::Atsfp => "atsfp".to_owned(),
+            LeaseKeyword::Cltt => "cltt".to_owned(),
+            LeaseKeyword::Binding => "binding".to_owned(),
+            LeaseKeyword::State => "state".to_owned(),
+            LeaseKeyword::Next => "next".to_owned(),
+            LeaseKeyword::Rewind => "rewind".to_owned(),
+            LeaseKeyword::Set => "set".to_owned(),
         }
     }
 
     pub fn from(s: &str) -> Result<LeaseKeyword, String> {
         match s {
-            "abandoned" => Ok(LeaseKeyword::Abandoned),
             "client-hostname" => Ok(LeaseKeyword::ClientHostname),
             "ends" => Ok(LeaseKeyword::Ends),
             "hardware" => Ok(LeaseKeyword::Hardware),
             "hostname" => Ok(LeaseKeyword::Hostname),
             "starts" => Ok(LeaseKeyword::Starts),
+            "tstp" => Ok(LeaseKeyword::Tstp),
+            "tsfp" => Ok(LeaseKeyword::Tsfp),
+            "atsfp" => Ok(LeaseKeyword::Atsfp),
+            "cltt" => Ok(LeaseKeyword::Cltt),
             "uid" => Ok(LeaseKeyword::Uid),
+            "binding" => Ok(LeaseKeyword::Binding),
+            "state" => Ok(LeaseKeyword::State),
+            "next" => Ok(LeaseKeyword::Next),
+            "rewind" => Ok(LeaseKeyword::Rewind),
+            "set" => Ok(LeaseKeyword::Set),
             _ => Err(format!("'{}' is not a recognized lease option", s)),
         }
     }
@@ -47,6 +78,10 @@ impl LeaseKeyword {
 pub struct LeaseDates {
     pub starts: Option<Date>,
     pub ends: Option<Date>,
+    pub tstp: Option<Date>,
+    pub tsfp: Option<Date>,
+    pub atsfp: Option<Date>,
+    pub cltt: Option<Date>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -95,7 +130,7 @@ impl Index<usize> for Leases {
 pub trait LeasesMethods {
     fn all(&self) -> Vec<Lease>;
 
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn active_by<S: AsRef<str>>(
         &self,
         field_name: LeasesField,
@@ -103,28 +138,28 @@ pub trait LeasesMethods {
         active_at: Date,
     ) -> Option<Lease>;
 
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn by_leased<S: AsRef<str>>(&self, ip: S) -> Option<Lease>;
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn by_leased_all<S: AsRef<str>>(&self, ip: S) -> Vec<Lease>;
 
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn by_mac<S: AsRef<str>>(&self, mac: S) -> Option<Lease>;
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn by_mac_all<S: AsRef<str>>(&self, mac: S) -> Vec<Lease>;
 
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn active_by_hostname<S: AsRef<str>>(&self, hostname: S, active_at: Date) -> Option<Lease>;
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn by_hostname_all<S: AsRef<str>>(&self, hostname: S) -> Vec<Lease>;
 
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn active_by_client_hostname<S: AsRef<str>>(
         &self,
         hostname: S,
         active_at: Date,
     ) -> Option<Lease>;
-    #[deprecated(since = "0.4.3", note="any filtering logic should be done by user")]
+    #[deprecated(since = "0.4.3", note = "any filtering logic should be done by user")]
     fn by_client_hostname_all<S: AsRef<str>>(&self, hostname: S) -> Vec<Lease>;
 
     fn new() -> Leases;
@@ -158,7 +193,7 @@ impl LeasesMethods for Leases {
         ls.reverse();
 
         for l in ls {
-            if l.is_active_at(active_at) && !l.abandoned {
+            if l.is_active_at(active_at) && l.binding_state != BindingState::Abandoned {
                 let val = get_val(&l);
                 if val.is_some() && val.unwrap() == expected_val {
                     return Some(l);
@@ -310,7 +345,10 @@ pub struct Lease {
     pub uid: Option<String>,
     pub client_hostname: Option<String>,
     pub hostname: Option<String>,
-    pub abandoned: bool,
+    pub binding_state: BindingState,
+    pub next_binding_state: Option<BindingState>,
+    pub rewind_binding_state: Option<BindingState>,
+    pub vendor_class_identifier: Option<String>,
 }
 
 impl Lease {
@@ -320,12 +358,19 @@ impl Lease {
             dates: LeaseDates {
                 starts: None,
                 ends: None,
+                tstp: None,
+                tsfp: None,
+                atsfp: None,
+                cltt: None,
             },
             hardware: None,
             uid: None,
             client_hostname: None,
             hostname: None,
-            abandoned: false,
+            binding_state: BindingState::Free,
+            next_binding_state: None,
+            rewind_binding_state: None,
+            vendor_class_identifier: None,
         }
     }
 
@@ -342,6 +387,79 @@ impl Lease {
     }
 }
 
+pub fn parse_date<'l, T: Iterator<Item = &'l LexItem>>(
+    iter: &mut Peekable<T>,
+    name: &str,
+) -> Result<crate::common::Date, String> {
+    let weekday = match iter.peek() {
+        Some(v) => v.to_string(),
+        None => return Err(format!("Weekday for {:?} date expected", name)),
+    };
+    iter.next();
+    let date = match iter.peek() {
+        Some(v) => v.to_string(),
+        None => return Err(format!("Date for {:?} date expected", name)),
+    };
+    iter.next();
+    let time = match iter.peek() {
+        Some(v) => v.to_string(),
+        None => return Err(format!("Time for {:?} date expected", name)),
+    };
+    iter.next();
+    let tz = match iter.peek() {
+        Some(v) => v.to_string(),
+        None => return Err(format!("Timezone for {:?} date expected", name)),
+    };
+    if tz != LexItem::Endl.to_string() {
+        iter.next();
+        match iter.peek() {
+            None => {
+                return Err(format!(
+                    "Semicolon after timezone for {:?} date expected",
+                    name
+                ))
+            }
+            Some(LexItem::Endl) => (),
+            Some(s) => {
+                return Err(format!(
+                    "Expected semicolon after timezone for {:?} date, found {:?}",
+                    name, s
+                ))
+            }
+        }
+    }
+
+    Date::from(weekday, date, time)
+}
+
+pub fn parse_binding_state<'l, T: Iterator<Item = &'l LexItem>>(
+    iter: &mut Peekable<T>,
+) -> Result<BindingState, String> {
+    iter.next();
+    if iter.peek() != Some(&&LexItem::Opt(LeaseKeyword::State)) {
+        return Err("Expected 'state' after 'binding'".to_owned());
+    }
+
+    iter.next();
+    let r = if let Some(LexItem::Word(w)) = iter.peek() {
+        match w.as_str() {
+            "active" => BindingState::Active,
+            "free" => BindingState::Free,
+            "abandoned" => BindingState::Abandoned,
+            _ => return Err(format!("Expected binding value, found {:?}", iter.peek())),
+        }
+    } else {
+        return Err(format!("Expected binding value, found {:?}", iter.peek()));
+    };
+
+    iter.next();
+    if iter.peek() != Some(&&LexItem::Endl) {
+        return Err(format!("Expected semisolon, found {:?}", iter.peek()));
+    }
+
+    Ok(r)
+}
+
 pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
     lease: &mut Lease,
     iter: &mut Peekable<T>,
@@ -350,61 +468,27 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
         match nc {
             LexItem::Opt(LeaseKeyword::Starts) => {
                 iter.next();
-                let weekday = iter
-                    .peek()
-                    .expect("Weekday for start date expected")
-                    .to_string();
-                iter.next();
-                let date = iter
-                    .peek()
-                    .expect("Date for start date expected")
-                    .to_string();
-                iter.next();
-                let time = iter
-                    .peek()
-                    .expect("Time for start date expected")
-                    .to_string();
-                iter.next();
-
-                let tz = iter
-                    .peek()
-                    .expect("Timezone or semicolon expected")
-                    .to_string();
-                if tz != LexItem::Endl.to_string() {
-                    iter.next();
-                    match iter.peek().expect("Semicolon expected") {
-                        LexItem::Endl => (),
-                        s => return Err(format!("Expected semicolon, found {}", s.to_string())),
-                    }
-                }
-
-                lease.dates.starts.replace(Date::from(weekday, date, time)?);
+                lease.dates.starts.replace(parse_date(iter, "start")?);
             }
             LexItem::Opt(LeaseKeyword::Ends) => {
                 iter.next();
-                let weekday = iter
-                    .peek()
-                    .expect("Weekday for end date expected")
-                    .to_string();
+                lease.dates.ends.replace(parse_date(iter, "end")?);
+            }
+            LexItem::Opt(LeaseKeyword::Tstp) => {
                 iter.next();
-                let date = iter.peek().expect("Date for end date expected").to_string();
+                lease.dates.tstp.replace(parse_date(iter, "tstp")?);
+            }
+            LexItem::Opt(LeaseKeyword::Tsfp) => {
                 iter.next();
-                let time = iter.peek().expect("Time for end date expected").to_string();
+                lease.dates.tsfp.replace(parse_date(iter, "tsfp")?);
+            }
+            LexItem::Opt(LeaseKeyword::Atsfp) => {
                 iter.next();
-                let tz = iter
-                    .peek()
-                    .expect("Timezone or semicolon expected")
-                    .to_string();
-
-                if tz != LexItem::Endl.to_string() {
-                    iter.next();
-                    match iter.peek().expect("Semicolon expected") {
-                        LexItem::Endl => (),
-                        s => return Err(format!("Expected semicolon, found {}", s.to_string())),
-                    }
-                }
-
-                lease.dates.ends.replace(Date::from(weekday, date, time)?);
+                lease.dates.atsfp.replace(parse_date(iter, "atsfp")?);
+            }
+            LexItem::Opt(LeaseKeyword::Cltt) => {
+                iter.next();
+                lease.dates.cltt.replace(parse_date(iter, "cltt")?);
             }
             LexItem::Opt(LeaseKeyword::Hardware) => {
                 iter.next();
@@ -417,10 +501,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                     s => return Err(format!("Expected semicolon, found {}", s.to_string())),
                 }
 
-                lease.hardware.replace(Hardware {
-                    h_type: h_type,
-                    mac: mac,
-                });
+                lease.hardware.replace(Hardware { h_type, mac });
             }
             LexItem::Opt(LeaseKeyword::Uid) => {
                 iter.next();
@@ -436,7 +517,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
             }
             LexItem::Opt(LeaseKeyword::ClientHostname) => {
                 iter.next();
-                lease.client_hostname.replace(unquote_hostname(
+                lease.client_hostname.replace(unquote(
                     iter.peek().expect("Client hostname expected").to_string(),
                 ));
 
@@ -446,11 +527,28 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                     s => return Err(format!("Expected semicolon, found {}", s.to_string())),
                 }
             }
+            LexItem::Opt(LeaseKeyword::Binding) => lease.binding_state = parse_binding_state(iter)?,
+            LexItem::Opt(LeaseKeyword::Next) => {
+                iter.next();
+                if iter.peek() == Some(&&LexItem::Opt(LeaseKeyword::Binding)) {
+                    lease.next_binding_state = Some(parse_binding_state(iter)?)
+                } else {
+                    return Err(format!("Expected 'binding' after 'next'"));
+                }
+            }
+            LexItem::Opt(LeaseKeyword::Rewind) => {
+                iter.next();
+                if iter.peek() == Some(&&LexItem::Opt(LeaseKeyword::Binding)) {
+                    lease.rewind_binding_state = Some(parse_binding_state(iter)?)
+                } else {
+                    return Err(format!("Expected 'binding' after 'rewind'"));
+                }
+            }
             LexItem::Opt(LeaseKeyword::Hostname) => {
                 iter.next();
-                lease.hostname.replace(unquote_hostname(
-                    iter.peek().expect("Hostname expected").to_string(),
-                ));
+                lease
+                    .hostname
+                    .replace(unquote(iter.peek().expect("Hostname expected").to_string()));
 
                 iter.next();
                 match iter.peek().expect("Semicolon expected") {
@@ -458,12 +556,37 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                     s => return Err(format!("Expected semicolon, found {}", s.to_string())),
                 }
             }
-            LexItem::Opt(LeaseKeyword::Abandoned) => {
-                lease.abandoned = true;
+            LexItem::Opt(LeaseKeyword::Set) => {
                 iter.next();
-                match iter.peek().expect("Semicolon expected") {
-                    LexItem::Endl => (),
-                    s => return Err(format!("Expected semicolon, found {}", s.to_string())),
+                let name = if let Some(LexItem::Word(w)) = iter.peek() {
+                    w
+                } else {
+                    return Err(format!("Value name expected after 'set'"));
+                };
+
+                iter.next();
+                if Some(&&LexItem::Word("=".to_string())) != iter.peek() {
+                    return Err(format!("'=' expected after 'set VALUE'"));
+                }
+
+                iter.next();
+                let value = if let Some(LexItem::Word(w)) = iter.peek() {
+                    w
+                } else {
+                    return Err(format!("Value name expected after '='"));
+                };
+
+                iter.next();
+                if iter.peek() != Some(&&LexItem::Endl) {
+                    return Err(format!("Expected semisolon, found {:?}", iter.peek()));
+                }
+
+                match name.as_str() {
+                    "vendor-class-identifier" => {
+                        let _ = lease.vendor_class_identifier.replace(value.clone());
+                    }
+                    // Skip unknown values
+                    _ => (),
                 }
             }
             LexItem::Paren('}') => {
@@ -482,6 +605,6 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
     Ok(())
 }
 
-fn unquote_hostname(hn: String) -> String {
+fn unquote(hn: String) -> String {
     hn.replace("\"", "")
 }

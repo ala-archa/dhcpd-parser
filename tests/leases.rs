@@ -39,7 +39,6 @@ fn all_options_test() {
         uid Client1;
         client-hostname \"CLIENTHOSTNAME\";
         hostname \"TESTHOSTNAME\";
-        abandoned;
     }",
     );
 
@@ -57,7 +56,6 @@ fn multiple_leases_test() {
         uid Client1;
         client-hostname \"CLIENTHOSTNAME\";
         hostname \"TESTHOSTNAME\";
-        abandoned;
     }
 
     lease 192.168.0.3 {
@@ -78,9 +76,6 @@ fn multiple_leases_test() {
         "Monday 1985/01/01 00:00:00"
     );
     assert!(leases[1].dates.ends.is_none());
-
-    assert!(leases[0].abandoned);
-    assert!(!leases[1].abandoned);
 }
 
 #[test]
@@ -116,7 +111,6 @@ fn is_active_test() {
         uid Client1;
         client-hostname \"CLIENTHOSTNAME\";
         hostname \"TESTHOSTNAME\";
-        abandoned;
     }
 
     lease 192.168.0.3 {
@@ -197,7 +191,6 @@ fn client_hostnames_test() {
         uid Client1;
         client-hostname \"CLIENTHOSTNAME\";
         hostname \"TESTHOSTNAME\";
-        abandoned;
     }
 
     lease 192.168.0.3 {
@@ -243,7 +236,6 @@ fn client_hostnames_with_comments_test() {
         uid Client1;
         client-hostname \"CLIENTHOSTNAME\";
         hostname \"TESTHOSTNAME\"; # comment
-        abandoned;
     }
     # comment",
     );
@@ -254,4 +246,63 @@ fn client_hostnames_with_comments_test() {
         leases.client_hostnames(),
         ["CLIENTHOSTNAME".to_owned()].iter().cloned().collect()
     );
+}
+
+#[test]
+fn real_world_test() {
+    let res = parser::parse(
+        r#"
+lease 10.11.4.50 {
+  starts 3 2023/02/22 21:15:36;
+  ends 4 2023/02/23 09:15:36;
+  tstp 4 2023/02/23 09:15:36;
+  cltt 3 2023/02/22 21:23:36;
+  binding state free;
+  hardware ethernet 5a:64:bf:76:34:58;
+  uid "\001Zd\277v4X";
+  set vendor-class-identifier = "android-dhcp-13";
+}
+lease 10.11.4.55 {
+  starts 4 2023/02/23 16:20:27;
+  ends 5 2023/02/24 04:20:27;
+  tstp 5 2023/02/24 04:20:27;
+  cltt 4 2023/02/23 18:50:26;
+  binding state free;
+  hardware ethernet 12:48:21:93:f9:83;
+  uid "\001\022H!\223\371\203";
+}
+lease 10.11.4.57 {
+  starts 5 2023/02/24 07:51:09;
+  ends 5 2023/02/24 19:51:09;
+  tstp 5 2023/02/24 19:51:09;
+  cltt 5 2023/02/24 07:51:09;
+  binding state free;
+  hardware ethernet 1c:15:1f:aa:29:36;
+  uid "\001\034\025\037\252)6";
+  set vendor-class-identifier = "HUAWEI:android:ALP";
+}
+lease 10.11.4.56 {
+  starts 5 2023/02/24 12:07:59;
+  ends 6 2023/02/25 00:07:59;
+  tstp 6 2023/02/25 00:07:59;
+  cltt 5 2023/02/24 12:07:59;
+  binding state free;
+  hardware ethernet 3e:34:59:df:2e:aa;
+  uid "\001>4Y\337.\252";
+  set vendor-class-identifier = "android-dhcp-13";
+}
+lease 10.11.4.52 {
+  starts 0 2023/02/26 07:52:20;
+  ends 0 2023/02/26 19:52:20;
+  cltt 0 2023/02/26 07:52:20;
+  binding state active;
+  next binding state free;
+  rewind binding state free;
+  hardware ethernet 6c:6a:77:f9:cc:93;
+  uid "\001ljw\371\314\223";
+  client-hostname "mailbook";
+}"#,
+    );
+
+    let _ = res.unwrap();
 }

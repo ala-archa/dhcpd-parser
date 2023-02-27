@@ -25,6 +25,29 @@ impl fmt::Display for LexItem {
     }
 }
 
+fn parse_double_quoted<T: Iterator<Item = char>>(it: &mut Peekable<T>) -> Result<String, String> {
+    let mut result = String::new();
+
+    it.next();
+    while let Some(c) = it.next() {
+        match c {
+            '\\' => match it.next() {
+                None => return Err("Unexpected EOF after backslash".to_string()),
+                Some('\\') => result.push('\\'),
+                Some('"') => result.push('"'),
+                Some(c) => {
+                    result.push('\\');
+                    result.push(c.clone());
+                }
+            },
+            '"' => return Ok(result),
+            c => result.push(c.clone()),
+        }
+    }
+
+    Err("Unexpected EOF after backslash".to_string())
+}
+
 pub fn lex<S>(input: S) -> Result<Vec<LexItem>, String>
 where
     S: Into<String>,
@@ -50,6 +73,9 @@ where
             }
             ' ' | '\n' | '\t' => {
                 it.next();
+            }
+            '"' => {
+                result.push(LexItem::Word(parse_double_quoted(&mut it)?));
             }
             ';' => {
                 result.push(LexItem::Endl);

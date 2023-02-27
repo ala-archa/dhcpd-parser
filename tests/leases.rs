@@ -299,7 +299,7 @@ lease 10.11.4.52 {
   next binding state free;
   rewind binding state free;
   hardware ethernet 6c:6a:77:f9:cc:93;
-  uid "\001ljw\371\314\223";
+  uid "\001ljw\371;\314\223";
   client-hostname "mailbook";
 }"#,
     );

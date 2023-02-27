@@ -505,7 +505,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                     Some(v) => v.to_string(),
                     None => return Err("Client hostname expected".to_owned()),
                 };
-                lease.client_hostname.replace(unquote(&v));
+                lease.client_hostname.replace(v);
 
                 iter.next();
                 if iter.peek() != Some(&&LexItem::Endl) {
@@ -535,7 +535,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                     Some(v) => v.to_string(),
                     None => return Err("Hostname expected".to_owned()),
                 };
-                lease.hostname.replace(unquote(&v));
+                lease.hostname.replace(v);
 
                 iter.next();
                 if iter.peek() != Some(&&LexItem::Endl) {
@@ -568,7 +568,7 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
                 }
 
                 if let "vendor-class-identifier" = name.as_str() {
-                    let _ = lease.vendor_class_identifier.replace(unquote(value));
+                    let _ = lease.vendor_class_identifier.replace(value.to_string());
                 }
             }
             LexItem::Paren('}') => {
@@ -582,11 +582,4 @@ pub fn parse_lease<'l, T: Iterator<Item = &'l LexItem>>(
     }
 
     Ok(())
-}
-
-fn unquote(hn: &str) -> String {
-    hn.trim_start_matches('"')
-        .trim_end_matches('"')
-        .replace("\\\"", "\"")
-        .replace("\\\\", "\\")
 }
